@@ -1,0 +1,10 @@
+serial:
+  port: '/dev/ttyUSB0'
+  baudrate: 9600
+
+gpio:
+  relay_pins:
+    - 17
+    - 27
+    - 22
+    - 23
