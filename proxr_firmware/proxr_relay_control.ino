@@ -184,15 +184,26 @@ void processSerialCommand() {
   
   if (command.startsWith("BANK ")) {
     // Command format: BANK <number> ON/OFF
-    int bankNum = command.substring(5, command.indexOf(' ', 5)).toInt() - 1;
-    String action = command.substring(command.lastIndexOf(' ') + 1);
+    int secondSpace = command.indexOf(' ', 5);
+    if (secondSpace == -1) {
+      Serial.println("Error: Invalid BANK command format. Use: BANK <1-11> ON/OFF");
+      return;
+    }
+    
+    int bankNum = command.substring(5, secondSpace).toInt() - 1;
+    String action = command.substring(secondSpace + 1);
+    action.trim();
     
     if (bankNum >= 0 && bankNum < NUM_BANKS) {
       if (action == "ON") {
         turnOnBank(bankNum);
       } else if (action == "OFF") {
         turnOffBank(bankNum);
+      } else {
+        Serial.println("Error: Action must be ON or OFF");
       }
+    } else {
+      Serial.println("Error: Bank number must be 1-11");
     }
   } else if (command.startsWith("RELAY ")) {
     // Command format: RELAY <bank> <relay> ON/OFF
@@ -200,16 +211,29 @@ void processSerialCommand() {
     int secondSpace = command.indexOf(' ', firstSpace + 1);
     int thirdSpace = command.indexOf(' ', secondSpace + 1);
     
+    if (firstSpace == -1 || secondSpace == -1 || thirdSpace == -1) {
+      Serial.println("Error: Invalid RELAY command format. Use: RELAY <bank> <relay> ON/OFF");
+      return;
+    }
+    
     int bankNum = command.substring(firstSpace + 1, secondSpace).toInt() - 1;
     int relayNum = command.substring(secondSpace + 1, thirdSpace).toInt() - 1;
     String action = command.substring(thirdSpace + 1);
+    action.trim();
     
     if (bankNum >= 0 && bankNum < NUM_BANKS && relayNum >= 0 && relayNum < RELAYS_PER_BANK) {
       if (action == "ON") {
         turnOnRelay(bankNum, relayNum);
       } else if (action == "OFF") {
         turnOffRelay(bankNum, relayNum);
+      } else {
+        Serial.println("Error: Action must be ON or OFF");
       }
+    } else {
+      Serial.print("Error: Bank must be 1-");
+      Serial.print(NUM_BANKS);
+      Serial.print(", Relay must be 1-");
+      Serial.println(RELAYS_PER_BANK);
     }
   } else if (command == "STATUS") {
     printStatus();

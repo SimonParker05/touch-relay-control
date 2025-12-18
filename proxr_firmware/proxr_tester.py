@@ -207,6 +207,33 @@ Examples:
     
     args = parser.parse_args()
     
+    # Validate argument combinations before connecting
+    if args.bank:
+        if not (args.on or args.off):
+            print("Error: Specify --on or --off with --bank")
+            sys.exit(1)
+        if args.on and args.off:
+            print("Error: Cannot specify both --on and --off")
+            sys.exit(1)
+        if args.bank < 1 or args.bank > 11:
+            print("Error: Bank number must be 1-11")
+            sys.exit(1)
+    
+    if args.relay:
+        if not (args.on or args.off):
+            print("Error: Specify --on or --off with --relay")
+            sys.exit(1)
+        if args.on and args.off:
+            print("Error: Cannot specify both --on and --off")
+            sys.exit(1)
+        bank, relay = args.relay
+        if bank < 1 or bank > 11:
+            print("Error: Bank number must be 1-11")
+            sys.exit(1)
+        if relay < 1 or relay > 8:
+            print("Error: Relay number must be 1-8")
+            sys.exit(1)
+    
     # Create controller instance
     controller = ProXrController(args.port, args.baudrate)
     
@@ -221,18 +248,14 @@ Examples:
         elif args.bank:
             if args.on:
                 controller.turn_on_bank(args.bank)
-            elif args.off:
-                controller.turn_off_bank(args.bank)
             else:
-                print("Error: Specify --on or --off with --bank")
+                controller.turn_off_bank(args.bank)
         elif args.relay:
             bank, relay = args.relay
             if args.on:
                 controller.turn_on_relay(bank, relay)
-            elif args.off:
-                controller.turn_off_relay(bank, relay)
             else:
-                print("Error: Specify --on or --off with --relay")
+                controller.turn_off_relay(bank, relay)
         else:
             # Default to interactive mode
             controller.interactive_mode()
