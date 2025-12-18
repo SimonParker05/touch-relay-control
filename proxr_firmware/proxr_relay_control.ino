@@ -12,11 +12,14 @@
  */
 
 // NCD ProXr Command Definitions
+// Protocol format: [0xFE] [COMMAND] [DATA] [CHECKSUM]
+// Checksum = 255 - (sum of all bytes) + 1
+// Note: ProXr uses 1-based numbering (banks 1-11, relays 1-88)
 #define CMD_PREFIX 0xFE          // Command prefix for ProXr
-#define RELAY_ON 0x64            // Turn relay ON (bank addressing mode)
-#define RELAY_OFF 0x65           // Turn relay OFF (bank addressing mode)
-#define RELAY_ON_ALL 0x66        // Turn all relays ON in a bank
-#define RELAY_OFF_ALL 0x67       // Turn all relays OFF in a bank
+#define RELAY_ON 0x64            // Turn relay ON (individual relay 1-88)
+#define RELAY_OFF 0x65           // Turn relay OFF (individual relay 1-88)
+#define RELAY_ON_ALL 0x66        // Turn all relays ON in a bank (bank 1-11)
+#define RELAY_OFF_ALL 0x67       // Turn all relays OFF in a bank (bank 1-11)
 
 // Configuration
 #define NUM_BANKS 11             // 11 banks of relays
@@ -102,7 +105,8 @@ void turnOnBank(int bank) {
   if (bank < 0 || bank >= NUM_BANKS) return;
   
   // Send command to turn on all relays in the bank
-  sendProXrCommand(RELAY_ON_ALL, bank);
+  // ProXr uses 1-based bank numbering
+  sendProXrCommand(RELAY_ON_ALL, bank + 1);
   
   // Update state tracking
   for (int relay = 0; relay < RELAYS_PER_BANK; relay++) {
@@ -118,7 +122,8 @@ void turnOffBank(int bank) {
   if (bank < 0 || bank >= NUM_BANKS) return;
   
   // Send command to turn off all relays in the bank
-  sendProXrCommand(RELAY_OFF_ALL, bank);
+  // ProXr uses 1-based bank numbering
+  sendProXrCommand(RELAY_OFF_ALL, bank + 1);
   
   // Update state tracking
   for (int relay = 0; relay < RELAYS_PER_BANK; relay++) {
@@ -137,13 +142,15 @@ void turnOffAllRelays() {
   }
 }
 
-void sendProXrCommand(byte command, byte bank) {
-  // NCD ProXr protocol: [PREFIX] [COMMAND] [BANK] [CHECKSUM]
-  byte checksum = (CMD_PREFIX + command + bank) & 0xFF;
+void sendProXrCommand(byte command, byte data) {
+  // NCD ProXr protocol: [PREFIX] [COMMAND] [DATA] [CHECKSUM]
+  // Checksum = 255 - (sum of all bytes) + 1
+  int sum = CMD_PREFIX + command + data;
+  byte checksum = 255 - (sum & 0xFF) + 1;
   
   Serial.write(CMD_PREFIX);
   Serial.write(command);
-  Serial.write(bank);
+  Serial.write(data);
   Serial.write(checksum);
   Serial.flush();
 }
@@ -153,7 +160,9 @@ void turnOnRelay(int bank, int relay) {
   if (relay < 0 || relay >= RELAYS_PER_BANK) return;
   
   // Send command to turn on specific relay
-  sendProXrCommand(RELAY_ON, (bank * RELAYS_PER_BANK) + relay);
+  // ProXr uses 1-based relay numbering: relay 1-88
+  byte relayNumber = (bank * RELAYS_PER_BANK) + relay + 1;
+  sendProXrCommand(RELAY_ON, relayNumber);
   relayStates[bank][relay] = true;
 }
 
@@ -162,7 +171,9 @@ void turnOffRelay(int bank, int relay) {
   if (relay < 0 || relay >= RELAYS_PER_BANK) return;
   
   // Send command to turn off specific relay
-  sendProXrCommand(RELAY_OFF, (bank * RELAYS_PER_BANK) + relay);
+  // ProXr uses 1-based relay numbering: relay 1-88
+  byte relayNumber = (bank * RELAYS_PER_BANK) + relay + 1;
+  sendProXrCommand(RELAY_OFF, relayNumber);
   relayStates[bank][relay] = false;
 }
 
